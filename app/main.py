@@ -1,24 +1,18 @@
 from functools import lru_cache
 
+from config.settings import Settings, settings
 from fastapi import Depends, FastAPI
-from typing_extensions import Annotated
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing_extensions import Annotated
 
-
-class Settings(BaseSettings):
-    app_name: str = "Awesome API"
-    admin_email: str
-    items_per_user: int = 50
-
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
-
-
-app = FastAPI()
+app = FastAPI(
+    title=settings.app_name,
+)
 
 
 @lru_cache(maxsize=1)
 def get_settings():
-    return Settings()
+    return settings 
 
 
 @app.get("/info")
