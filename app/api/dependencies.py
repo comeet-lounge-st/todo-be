@@ -1,7 +1,8 @@
 from app.infrastructure.db.session import SessionLocal
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-def get_db() -> Session:
+
+def get_db() -> AsyncSession:
     db = SessionLocal()
     try:
         yield db
