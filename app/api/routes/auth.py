@@ -58,9 +58,6 @@ async def sign_in(
     access_token = await access_token_strategy.write_token(user)
     refresh_token = await refresh_token_strategy.write_token(user)
 
-    print(access_token, "access_token")
-    print(refresh_token, "refresh_token")
-
     return SigninResponse(
         token=access_token,
         refreshToken=refresh_token,
