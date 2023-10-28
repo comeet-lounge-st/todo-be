@@ -5,14 +5,18 @@ from fastapi import Depends, FastAPI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing_extensions import Annotated
 
+from app.api.routes import auth
+
 app = FastAPI(
     title=settings.app_name,
 )
 
+app.include_router(auth.router)
+
 
 @lru_cache(maxsize=1)
 def get_settings():
-    return settings 
+    return settings
 
 
 @app.get("/info")
