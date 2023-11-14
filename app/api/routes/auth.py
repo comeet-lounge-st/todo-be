@@ -10,6 +10,7 @@ from app.domain.entities.auth import (
     UserCreate,
     UserRead,
 )
+from app.domain.entities.common import ErrorResponse
 from app.infrastructure.db.models import User
 from app.infrastructure.services.jwt import access_token_backend, refresh_token_backend
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -38,6 +39,7 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "로그인 실패",
+            "model": ErrorResponse,
         },
     },
 )
@@ -87,6 +89,7 @@ async def sign_in(
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "회원가입 실패",
+            "model": ErrorResponse,
         },
     },
 )
