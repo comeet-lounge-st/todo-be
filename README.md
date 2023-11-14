@@ -6,7 +6,7 @@ alembic upgrade head
 ```
 
 
-## 실행 
+## 실행
 
 ### Shell
 
@@ -25,15 +25,15 @@ docker run todo-be -p 8000:8000
 
 ```
 .
-├── app                         # Application 
+├── app                         # Application
 │   ├── api                     # API를 구현하는 경로
 │   │   └── routes              # 어플리케이션 단위로 엔드포인트를 설정하는 경로 / APIRouter를 사용 / Spring의 Controller 동일
-│   ├── domain                  # 
+│   ├── domain                  #
 │   │   ├── entities            # pydantic의 BaseModel에 기반한 DTO, VO 등의 경로
 │   │   ├── repositories        # Interface 형태의 Repository에 대한 경로
 │   │   └── services            # Interface 형태의 Service에 대한 경로
 │   ├── infrastructure          #
-│   │   ├── db                  # 
+│   │   ├── db                  #
 │   │   │   ├── models.py       # SqlAlchemy를 통해 DB와 연결할 DAO를 저장하는 파일
 │   │   │   ├── repositories.py # Repository의 구현체에 대한 파일
 │   │   │   └── session.py      # DB 커넥션을 저장하는 파일
@@ -53,4 +53,8 @@ docker run todo-be -p 8000:8000
 └── run.py                      # 앱 실행 python 파일
 ```
 
+## Migration
 
+```
+alembic revision --autogenerate -m "create todo table"
+```

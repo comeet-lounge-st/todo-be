@@ -1,22 +1,24 @@
-import uuid
 from typing import Annotated
 
 from app.api.dependencies import get_user_manager
-from app.domain.entities.auth import SigninResponse, UserCreate, UserRead
-from app.infrastructure.db.models import User
+from app.domain.entities.auth import (
+    RefreshTokenRequest,
+    SigninRequest,
+    SigninResponse,
+    SignupRequest,
+    SignupResponse,
+    UserCreate,
+    UserRead,
+)
+from app.domain.entities.common import ErrorResponse
 from app.infrastructure.services.jwt import access_token_backend, refresh_token_backend
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_users import BaseUserManager, FastAPIUsers, exceptions, models, schemas
+from fastapi_users import BaseUserManager, exceptions, models, schemas
 from fastapi_users.authentication.strategy.base import Strategy
 
 router = APIRouter(
     tags=["auth"],
-)
-
-fastapi_users = FastAPIUsers[User, uuid.UUID](
-    get_user_manager,
-    [access_token_backend, refresh_token_backend],
 )
 
 
@@ -31,12 +33,13 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "로그인 실패",
+            "model": ErrorResponse,
         },
     },
 )
 async def sign_in(
     request: Request,
-    credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
+    credentials: Annotated[SigninRequest, Depends()],
     user_manager: Annotated[
         BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
     ],
@@ -47,6 +50,11 @@ async def sign_in(
         Strategy[models.UP, models.ID], Depends(refresh_token_backend.get_strategy)
     ],
 ):
+    credentials = OAuth2PasswordRequestForm(
+        username=credentials.email,
+        password=credentials.password,
+    )
+
     user = await user_manager.authenticate(credentials)
 
     if user is None or not user.is_active:
@@ -67,7 +75,7 @@ async def sign_in(
 @router.post(
     "/sign-up",
     name="auth:sign-up",
-    response_model=UserRead,
+    response_model=SignupResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {
@@ -75,17 +83,23 @@ async def sign_in(
         },
         status.HTTP_400_BAD_REQUEST: {
             "description": "회원가입 실패",
+            "model": ErrorResponse,
         },
     },
 )
 async def sign_up(
     request: Request,
-    user_create: Annotated[UserCreate, Depends()],
+    user_create: Annotated[SignupRequest, Depends()],
     user_manager: Annotated[
         BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
     ],
 ):
     try:
+        user_create = UserCreate(
+            email=user_create.email,
+            password=user_create.password,
+            name=user_create.name,
+        )
         created_user = await user_manager.create(
             user_create, safe=True, request=request
         )
@@ -100,4 +114,46 @@ async def sign_up(
             detail=e.reason,
         )
 
-    return schemas.model_validate(UserRead, created_user)
+    user = schemas.model_validate(UserRead, created_user)
+    return SignupResponse(id=user.id)
+
+
+@router.get(
+    "/refresh-token",
+    name="auth:refresh-token",
+    response_model=SigninResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "토큰 갱신 성공",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "토큰 갱신 실패",
+            "model": ErrorResponse,
+        },
+    },
+)
+async def refresh_token(
+    request: Request,
+    refresh_token_request: Annotated[RefreshTokenRequest, Depends()],
+    refresh_token_strategy: Annotated[
+        Strategy[models.UP, models.ID], Depends(refresh_token_backend.get_strategy)
+    ],
+    user_manager: Annotated[
+        BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
+    ],
+):
+    refresh_token = refresh_token_request.refreshToken
+    user = await refresh_token_strategy.read_token(refresh_token, user_manager)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="유효하지 않은 토큰입니다.",
+        )
+
+    access_token = await refresh_token_strategy.write_token(user)
+
+    return SigninResponse(
+        token=access_token,
+        refreshToken=refresh_token,
+    )
