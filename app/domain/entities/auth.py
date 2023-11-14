@@ -1,8 +1,7 @@
 import uuid
 
-from config.settings import settings
 from fastapi_users import schemas
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SigninRequest(BaseModel):
@@ -30,6 +29,8 @@ class SignupResponse(BaseModel):
 
 
 class UserReadResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: uuid.UUID
     email: str
     name: str

@@ -1,8 +1,8 @@
 from config.settings import settings
 from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
 
-access_token_transport = BearerTransport(tokenUrl="auth/sign-in")
-refresh_token_transport = BearerTransport(tokenUrl="auth/jwt/refresh")
+access_token_transport = BearerTransport(tokenUrl="sign-in")
+refresh_token_transport = BearerTransport(tokenUrl="refresh-token")
 
 
 def get_access_token_strategy() -> JWTStrategy:

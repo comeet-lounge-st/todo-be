@@ -1,4 +1,3 @@
-import uuid
 from typing import Annotated
 
 from app.api.dependencies import get_user_manager
@@ -10,23 +9,16 @@ from app.domain.entities.auth import (
     SignupResponse,
     UserCreate,
     UserRead,
-    UserReadResponse,
 )
 from app.domain.entities.common import ErrorResponse
-from app.infrastructure.db.models import User
 from app.infrastructure.services.jwt import access_token_backend, refresh_token_backend
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi_users import BaseUserManager, FastAPIUsers, exceptions, models, schemas
+from fastapi_users import BaseUserManager, exceptions, models, schemas
 from fastapi_users.authentication.strategy.base import Strategy
 
 router = APIRouter(
     tags=["auth"],
-)
-
-fastapi_users = FastAPIUsers[User, uuid.UUID](
-    get_user_manager,
-    [access_token_backend, refresh_token_backend],
 )
 
 
