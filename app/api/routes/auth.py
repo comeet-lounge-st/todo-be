@@ -3,12 +3,14 @@ from typing import Annotated
 
 from app.api.dependencies import get_user_manager
 from app.domain.entities.auth import (
+    RefreshTokenRequest,
     SigninRequest,
     SigninResponse,
     SignupRequest,
     SignupResponse,
     UserCreate,
     UserRead,
+    UserReadResponse,
 )
 from app.domain.entities.common import ErrorResponse
 from app.infrastructure.db.models import User
@@ -122,3 +124,44 @@ async def sign_up(
 
     user = schemas.model_validate(UserRead, created_user)
     return SignupResponse(id=user.id)
+
+
+@router.get(
+    "/refresh-token",
+    name="auth:refresh-token",
+    response_model=SigninResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {
+            "description": "토큰 갱신 성공",
+        },
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "토큰 갱신 실패",
+            "model": ErrorResponse,
+        },
+    },
+)
+async def refresh_token(
+    request: Request,
+    refresh_token_request: Annotated[RefreshTokenRequest, Depends()],
+    refresh_token_strategy: Annotated[
+        Strategy[models.UP, models.ID], Depends(refresh_token_backend.get_strategy)
+    ],
+    user_manager: Annotated[
+        BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
+    ],
+):
+    refresh_token = refresh_token_request.refreshToken
+    user = await refresh_token_strategy.read_token(refresh_token, user_manager)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="유효하지 않은 토큰입니다.",
+        )
+
+    access_token = await refresh_token_strategy.write_token(user)
+
+    return SigninResponse(
+        token=access_token,
+        refreshToken=refresh_token,
+    )

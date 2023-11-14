@@ -26,7 +26,7 @@ access_token_backend = AuthenticationBackend(
 )
 
 refresh_token_backend = AuthenticationBackend(
-    name="jwt",
+    name="refresh",
     transport=refresh_token_transport,
     get_strategy=get_refresh_token_strategy,
 )

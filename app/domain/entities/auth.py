@@ -16,6 +16,10 @@ class SignupRequest(BaseModel):
     name: str
 
 
+class RefreshTokenRequest(BaseModel):
+    refreshToken: str
+
+
 class SigninResponse(BaseModel):
     token: str
     refreshToken: str
