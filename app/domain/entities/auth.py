@@ -5,19 +5,38 @@ from fastapi_users import schemas
 from pydantic import BaseModel
 
 
+class SigninRequest(BaseModel):
+    email: str
+    password: str
+
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+
+
 class SigninResponse(BaseModel):
     token: str
     refreshToken: str
-    tokenType: str = "bearer"
-    expires: int = settings.access_token_expiration
+
+
+class SignupResponse(BaseModel):
+    id: uuid.UUID
+
+
+class UserReadResponse(BaseModel):
+    id: uuid.UUID
+    email: str
+    name: str
 
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    pass
+    name: str
 
 
 class UserCreate(schemas.BaseUserCreate):
-    pass
+    name: str
 
 
 class UserUpdate(schemas.BaseUserUpdate):

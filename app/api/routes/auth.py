@@ -2,7 +2,14 @@ import uuid
 from typing import Annotated
 
 from app.api.dependencies import get_user_manager
-from app.domain.entities.auth import SigninResponse, UserCreate, UserRead
+from app.domain.entities.auth import (
+    SigninRequest,
+    SigninResponse,
+    SignupRequest,
+    SignupResponse,
+    UserCreate,
+    UserRead,
+)
 from app.infrastructure.db.models import User
 from app.infrastructure.services.jwt import access_token_backend, refresh_token_backend
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -36,7 +43,7 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](
 )
 async def sign_in(
     request: Request,
-    credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
+    credentials: Annotated[SigninRequest, Depends()],
     user_manager: Annotated[
         BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
     ],
@@ -47,6 +54,11 @@ async def sign_in(
         Strategy[models.UP, models.ID], Depends(refresh_token_backend.get_strategy)
     ],
 ):
+    credentials = OAuth2PasswordRequestForm(
+        username=credentials.email,
+        password=credentials.password,
+    )
+
     user = await user_manager.authenticate(credentials)
 
     if user is None or not user.is_active:
@@ -67,7 +79,7 @@ async def sign_in(
 @router.post(
     "/sign-up",
     name="auth:sign-up",
-    response_model=UserRead,
+    response_model=SignupResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {
@@ -80,12 +92,17 @@ async def sign_in(
 )
 async def sign_up(
     request: Request,
-    user_create: Annotated[UserCreate, Depends()],
+    user_create: Annotated[SignupRequest, Depends()],
     user_manager: Annotated[
         BaseUserManager[models.UP, models.ID], Depends(get_user_manager)
     ],
 ):
     try:
+        user_create = UserCreate(
+            email=user_create.email,
+            password=user_create.password,
+            name=user_create.name,
+        )
         created_user = await user_manager.create(
             user_create, safe=True, request=request
         )
@@ -100,4 +117,5 @@ async def sign_up(
             detail=e.reason,
         )
 
-    return schemas.model_validate(UserRead, created_user)
+    user = schemas.model_validate(UserRead, created_user)
+    return SignupResponse(id=user.id)
