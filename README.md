@@ -17,8 +17,8 @@ python run.py
 ### Docker
 
 ```bash
-docker build Dockerfile -t todo-be
-docker run todo-be -p 8000:8000
+docker build -t todo-be .
+docker run -d --name todo-be -p 8000:8000 -v $PWD/db.sqlite3:/app/db.sqlite3 todo-be
 ```
 
 ## 프로젝트 구조
